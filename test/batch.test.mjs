@@ -85,7 +85,7 @@ check("siffra följd av fyrsiffrigt tal", scaleLine("1 3000 g", 2), "2 3000 g");
 // Texterna nedan speglar recepten som ligger i databasen. Ändras ett recept
 // där behöver motsvarande text här följa med.
 group("Mammas ketchup");
-const ketchup = `Hemgjord ketchup. Tillsätter du 1 msk rapsolja i slutet minskar ytspänningen.
+const ketchup = `Hemgjord ketchup. Tillsätter du rapsoljan i slutet minskar ytspänningen.
 
 ⏱ 15 min + ca 1 timme koktid
 Ger ca 8 dl
@@ -98,12 +98,19 @@ INGREDIENSER
 • ½ tsk nymald svartpeppar
 
 GÖR SÅ HÄR
-3. Sjud ketchupen utan lock ca 1 timme.`;
+3. Sjud ketchupen utan lock ca 1 timme.
+
+TIPS
+Låt 1–2 chili (t.ex. spansk peppar) koka med. Eller krydda med 1 msk curry.`;
 const k3 = scaleRecipeBody(ketchup, 3);
 check("x3 tomater", k3.includes("• 3 kg tomater"), true);
 check("x3 ättiksprit", k3.includes("• 4 ½ dl ättiksprit (12 %)"), true);
 check("x3 koktid orörd", k3.includes("ca 1 timme koktid"), true);
-check("x3 mängd i brödtext orörd", k3.includes("Tillsätter du 1 msk rapsolja"), true);
+check("x3 inledningen orörd", k3.includes("Tillsätter du rapsoljan i slutet"), true);
+// TIPS-avsnittet ligger utanför ingredienslistan. Mängderna där är varianter,
+// inte receptets egna, och ska stå kvar som de är.
+check("x3 mängder i TIPS orörda",
+  k3.includes("Låt 1–2 chili") && k3.includes("krydda med 1 msk curry"), true);
 // Ändrat 2026-10-04: utbytet SKA skala. Tidigare stod raden kvar, vilket Lara
 // hittade i appen – "om jag dubblar receptet så står det fortfarande 8 dl".
 check("x3 utbytet skalas", k3.includes("Ger ca 24 dl"), true);
@@ -129,15 +136,16 @@ group("Svartvinbärs- och jordgubbssaft med rosmarin");
 const saft = `Ingredienser
 600 g mycket mogna svarta vinbär
 200 g frysta jordgubbar
-6 dl vatten totalt (börja gärna med 4 dl och tillsätt mer om bärmassan blir för tjock)
+6 dl vatten totalt (börja med det mesta och tillsätt resten om bärmassan blir för tjock)
 1 liten kvist rosmarin, cirka 4–5 cm
-215 g strösocker till 5 dl avrunnen saft
+215 g strösocker
 1 tsk vaniljsocker
 Atamon enligt förpackningen, om saften ska sparas länge
 
 Gör så här
 2. Koka upp under lock och låt sjuda cirka 15 minuter.
-4. Lägg i rosmarinkvisten under de sista 3–5 minuterna.`;
+4. Lägg i rosmarinkvisten under de sista 3–5 minuterna.
+6. Tillsätt strösocker, vaniljsocker och lime enligt ingredienslistan. Räkna cirka 215 g socker per 5 dl avrunnen saft.`;
 check("satsväljaren visas", recipeIsScalable(saft), true);
 const s2 = scaleRecipeBody(saft, 2);
 check("x2 vinbär", s2.includes("1200 g mycket mogna svarta vinbär"), true);
@@ -146,6 +154,13 @@ check("x2 socker", s2.includes("430 g strösocker"), true);
 check("x2 centimetermått orört", s2.includes("2 liten kvist rosmarin, cirka 4–5 cm"), true);
 check("x2 koktid orörd", s2.includes("sjuda cirka 15 minuter"), true);
 check("x2 minuter i instruktion orörda", s2.includes("de sista 3–5 minuterna"), true);
+// Sockret per dl saft är ett förhållande och gäller i alla satsstorlekar.
+// Skulle det skala skulle saften bli dubbelt så söt vid dubbel sats – det var
+// precis det felet som fanns i ingredienslistan före 2026-10-04.
+check("x2 sockerförhållandet i instruktionen orört",
+  s2.includes("cirka 215 g socker per 5 dl avrunnen saft"), true);
+check("x2 vattenmängden i parentesen är inte längre en siffra",
+  s2.includes("12 dl vatten totalt (börja med det mesta"), true);
 const sHalv = scaleRecipeBody(saft, 0.5);
 check("½ vinbär", sHalv.includes("300 g mycket mogna svarta vinbär"), true);
 check("½ socker med decimal", sHalv.includes("107,5 g strösocker"), true);
@@ -158,17 +173,20 @@ Den silade bärmassan från svartvinbärs- och jordgubbssaft med rosmarin
 1 tsk lösviktste Earl Grey
 8 g Gul Melatin
 150 g strösocker
-Cirka ⅓ tsk Atamon (ungefär 1,5–2 ml), om doseringen är 1 tsk per kg färdig gelé
+Cirka ⅓ tsk Atamon, om doseringen är 1 tsk per kg färdig gelé
 
 Gör så här
-5. Mät upp 8 g Gul Melatin och 150 g strösocker, enligt proportionerna på påsen: 40 g Melatin och 750 g socker per liter osockrad saft.`;
+5. Mät upp Melatin och strösocker enligt ingredienslistan. Proportionerna på påsen är 40 g Melatin och 750 g socker per liter osockrad saft.`;
 check("satsväljaren visas", recipeIsScalable(gele), true);
 const g3 = scaleRecipeBody(gele, 3);
 check("x3 vattenintervall", g3.includes("6–9 dl vatten"), true);
 check("x3 melatin", g3.includes("24 g Gul Melatin"), true);
 check("x3 socker", g3.includes("450 g strösocker"), true);
 check("x3 tredjedels tsk blir 1", g3.includes("Cirka 1 tsk Atamon"), true);
-check("x3 parentes orörd", g3.includes("(ungefär 1,5–2 ml)"), true);
+// Doseringen "1 tsk per kg" är ett förhållande och ska stå kvar även när
+// Atamon-mängden före den skalas. scaleLine tar bara första mängden på raden,
+// vilket är precis vad som behövs här.
+check("x3 doseringsförhållandet orört", g3.includes("om doseringen är 1 tsk per kg"), true);
 check("x3 rad utan mängd orörd", g3.includes("Den silade bärmassan från svartvinbärs-"), true);
 check("x3 proportioner i instruktion orörda", g3.includes("40 g Melatin och 750 g socker per liter"), true);
 const gHalv = scaleRecipeBody(gele, 0.5);
@@ -188,7 +206,7 @@ check("x2 koktidsraden orörd", k2.includes("⏱ 15 min + ca 1 timme koktid"), t
 check("x2 koktid i instruktionen orörd", k2.includes("Sjud ketchupen utan lock ca 1 timme"), true);
 check("x2 ingredienserna skalas fortfarande", k2.includes("• 2 kg tomater"), true);
 check("x2 procent i parentes orörd", k2.includes("(12 %)"), true);
-check("x2 inledningen orörd", k2.includes("Tillsätter du 1 msk rapsolja"), true);
+check("x2 inledningen orörd", k2.includes("Tillsätter du rapsoljan i slutet"), true);
 check("½ utbytet halveras", scaleRecipeBody(ketchup, 0.5).includes("Ger ca 4 dl"), true);
 
 // Stegen är numrerade och inleds med en siffra. Skulle mönstret träffa dem
