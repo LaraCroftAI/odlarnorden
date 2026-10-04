@@ -2257,7 +2257,7 @@ $("#recipe-print").addEventListener("click", () => {
 </style></head><body onload="window.print()">
   <h1>🍅 ${escapeHtml(name)}</h1>
   ${sorter.length ? `<p class="sorter">Passar bra med: ${escapeHtml(sorter.join(", "))}</p>` : ""}
-  ${recipeBatch !== 1 ? `<p class="sats">${escapeHtml(capitalize(batchPhrase(recipeBatch)))} – mängderna i ingredienslistan är omräknade.</p>` : ""}
+  ${recipeBatch !== 1 ? `<p class="sats">${escapeHtml(capitalize(batchPhrase(recipeBatch)))} – mängderna och utbytet är omräknade.</p>` : ""}
   <div class="body">${escapeHtml(body)}</div>
 </body></html>`);
   w.document.close();
@@ -2365,6 +2365,18 @@ function scaleLine(line, factor) {
   });
 }
 
+// Utbytet skalar med satsen – det gör inte koktiden. Dubblar man ketchupen
+// blir det dubbelt så mycket ketchup, men den kokar inte dubbelt så länge.
+//
+// Raden känns igen på att den INLEDER med Ger eller Blir. Att leta efter "ca"
+// eller en mängd var som helst på raden vore frestande men fel: då träffas
+// "⏱ 15 min + ca 1 timme koktid" också. Stegen är numrerade ("1. Skär
+// tomaterna…") och inleds med en siffra, så de kan aldrig matcha.
+//
+// Skriver man utbytet på något annat sätt skalas det inte. Det är avsiktligt –
+// hellre en rad som står kvar oförändrad än en koktid som fördubblas.
+const UTBYTE_RE = /^\s*(?:ger|blir)\b/i;
+
 // Ingredienslistan = raderna efter rubriken "Ingredienser" fram till tom rad.
 function ingredientBlock(lines) {
   const start = lines.findIndex((l) => /^\s*(?:[•*-]\s*)?ingredienser\s*:?\s*$/i.test(l));
@@ -2377,9 +2389,14 @@ function ingredientBlock(lines) {
 function scaleRecipeBody(body, factor) {
   if (!body || factor === 1) return body;
   const lines = body.split("\n");
+  // Kravet på en egen rad "Ingredienser" står kvar: utan den är receptet inte
+  // skalbart alls, och då ska inte heller en lös utbytesrad räknas om.
   const block = ingredientBlock(lines);
   if (!block) return body;
-  for (let i = block.start; i <= block.end; i++) lines[i] = scaleLine(lines[i], factor);
+  for (let i = 0; i < lines.length; i++) {
+    const iIngredienser = i >= block.start && i <= block.end;
+    if (iIngredienser || UTBYTE_RE.test(lines[i])) lines[i] = scaleLine(lines[i], factor);
+  }
   return lines.join("\n");
 }
 
@@ -2422,8 +2439,8 @@ function renderRecipeBatch() {
   const note = $("#recipe-batch-note");
   note.hidden = recipeBatch === 1;
   note.textContent =
-    `Mängderna nedan är omräknade för ${batchPhrase(recipeBatch)}. ` +
-    "Koktider, antal burkar och liknande står kvar som i originalet.";
+    `Mängderna och utbytet nedan är omräknade för ${batchPhrase(recipeBatch)}. ` +
+    "Koktider och stegnummer står kvar som i originalet.";
 
   const body = $("#recipe-dialog-body");
   const text = scaleRecipeBody(currentRecipe?.body || "", recipeBatch);

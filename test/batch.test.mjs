@@ -104,7 +104,9 @@ check("x3 tomater", k3.includes("• 3 kg tomater"), true);
 check("x3 ättiksprit", k3.includes("• 4 ½ dl ättiksprit (12 %)"), true);
 check("x3 koktid orörd", k3.includes("ca 1 timme koktid"), true);
 check("x3 mängd i brödtext orörd", k3.includes("Tillsätter du 1 msk rapsolja"), true);
-check("x3 utbyte orört", k3.includes("Ger ca 8 dl"), true);
+// Ändrat 2026-10-04: utbytet SKA skala. Tidigare stod raden kvar, vilket Lara
+// hittade i appen – "om jag dubblar receptet så står det fortfarande 8 dl".
+check("x3 utbytet skalas", k3.includes("Ger ca 24 dl"), true);
 check("1 sats ändrar ingenting", scaleRecipeBody(ketchup, 1), ketchup);
 
 group("Grön tomatmarmelad");
@@ -174,8 +176,47 @@ check("½ melatin", gHalv.includes("4 g Gul Melatin"), true);
 check("½ socker", gHalv.includes("75 g strösocker"), true);
 check("½ te blir bråk", gHalv.includes("½ tsk lösviktste"), true);
 
+// ------------------------------------------------------------------ utbyte
+// Dubblar man ketchupen blir det dubbelt så mycket ketchup – men den kokar
+// inte dubbelt så länge. Utbytesraden ska alltså skala, koktidsraden inte.
+// Lara hittade det 2026-10-04: "om jag dubblar receptet så står det
+// fortfarande 8 dl".
+group("Utbytet räknas om, men inte koktiden");
+const k2 = scaleRecipeBody(ketchup, 2);
+check("x2 utbytet dubblas", k2.includes("Ger ca 16 dl"), true);
+check("x2 koktidsraden orörd", k2.includes("⏱ 15 min + ca 1 timme koktid"), true);
+check("x2 koktid i instruktionen orörd", k2.includes("Sjud ketchupen utan lock ca 1 timme"), true);
+check("x2 ingredienserna skalas fortfarande", k2.includes("• 2 kg tomater"), true);
+check("x2 procent i parentes orörd", k2.includes("(12 %)"), true);
+check("x2 inledningen orörd", k2.includes("Tillsätter du 1 msk rapsolja"), true);
+check("½ utbytet halveras", scaleRecipeBody(ketchup, 0.5).includes("Ger ca 4 dl"), true);
+
+// Stegen är numrerade och inleds med en siffra. Skulle mönstret träffa dem
+// skulle "5." bli "10." vid dubbel sats och receptet bli oläsligt.
+const steg = `Ingredienser
+2 dl socker
+
+GÖR SÅ HÄR
+1. Skär tomaterna i grova bitar.
+3. Sjud utan lock ca 1 timme.
+5. Rör ner Atamon enligt doseringen.`;
+const steg2 = scaleRecipeBody(steg, 2);
+check("stegnummer orörda", steg2.includes("1. Skär") && steg2.includes("3. Sjud") && steg2.includes("5. Rör"), true);
+
+// "Blir" är lika naturligt som "Ger" och kostar ett ord i mönstret.
+check("Blir-rad skalar också",
+  scaleRecipeBody("Blir 4 burkar\n\nIngredienser\n2 dl socker", 2).includes("Blir 8 burkar"), true);
+check("intervall i utbytet skalar",
+  scaleRecipeBody("Ger 4–6 portioner\n\nIngredienser\n2 dl socker", 2).includes("Ger 8–12 portioner"), true);
+// Ordet måste INLEDA raden. Annars träffas meningar mitt i en instruktion.
+check("Ger mitt i en mening rör sig inte",
+  scaleRecipeBody("Ingredienser\n2 dl socker\n\nGör så här\n1. Detta ger ca 8 dl sås.", 2)
+    .includes("Detta ger ca 8 dl sås"), true);
+
 // ------------------------------------------------------------------ övrigt
 group("Recept utan tolkbar ingredienslista");
+check("utbytesrad utan ingredienslista gör inte receptet skalbart",
+  recipeIsScalable("Ger ca 8 dl\n\nGör så här\n1. Koka."), false);
 check("tom text", recipeIsScalable(""), false);
 check("löpande text utan rubrik", recipeIsScalable("Bara löpande text med 2 dl grädde."), false);
 check("rubrik utan innehåll", recipeIsScalable("Ingredienser\n\nGör så här\n1. Koka."), false);
