@@ -61,5 +61,21 @@ for (const id of ["privacy-dialog"]) {
   check(`#${id} finns i dokumentet`, html.includes(`<dialog id="${id}">`), true);
 }
 
+// ------------------------------------------------ element som koden kräver ----
+// renderFeedingReminder() och renderNaringKlarRad() slår upp de här med $() och
+// sätter .onclick direkt. Saknas ett id kastar renderAll() på null, och då
+// renderas ingenting alls – inte bara näringsdelen. Felet syns som en tom app.
+console.log("\n--- Element som renderingen slår upp ---");
+for (const id of ["reminder-log", "reminder-klar", "naring-klar-rad", "naring-klar-text", "naring-klar-angra"]) {
+  check(`#${id} finns`, new RegExp(`id="${id}"`).test(html), true);
+}
+// Knapparna ligger inte i ett formulär idag, men paret reminder/näring har
+// flyttats runt förut. type="button" är billig försäkring mot att en framtida
+// flytt in i ett <form> gör dem till submit-knappar.
+for (const id of ["reminder-klar", "naring-klar-angra"]) {
+  const knapp = html.match(new RegExp(`<button[^>]*id="${id}"[^>]*>`)) || [""];
+  check(`#${id} har type="button"`, /type="button"/.test(knapp[0]), true);
+}
+
 console.log(fails === 0 ? "\nALLA TESTER OK" : `\n${fails} TESTER MISSLYCKADES`);
 process.exit(fails === 0 ? 0 : 1);

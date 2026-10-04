@@ -47,6 +47,7 @@ let plantings = [];
 let harvests = [];
 let recipes = [];
 let feedings = [];
+let naringKlar = false;        // "klar med näring" för den valda säsongen
 let plantPhotos = [];
 let galleryPhotos = [];
 let currentRecipe = null;
@@ -467,7 +468,7 @@ $$(".tab").forEach((btn) => {
 async function loadAll() {
   // Måste gå först: plantor och växtnäring hämtas filtrerade på vald säsong.
   await loadSeasons();
-  await Promise.all([loadVarieties(), loadStarterVarieties(), loadPlantings(), loadHarvests(), loadRecipes(), loadFeedings(), loadPlantPhotos(), loadGalleryPhotos()]);
+  await Promise.all([loadVarieties(), loadStarterVarieties(), loadPlantings(), loadHarvests(), loadRecipes(), loadFeedings(), loadFeedingDone(), loadPlantPhotos(), loadGalleryPhotos()]);
   renderAll();
 }
 
@@ -554,6 +555,18 @@ async function loadFeedings() {
   if (error) return console.error(error);
   feedings = data;
 }
+// Har man sagt "klar med näring" för den här säsongen? Raden finns eller finns
+// inte; innehållet spelar ingen roll. maybeSingle() i stället för single(),
+// som ger ett fel när det inte finns någon rad – vilket är det normala läget.
+async function loadFeedingDone() {
+  const { data, error } = await sb
+    .from("feeding_done")
+    .select("season")
+    .eq("season", season)
+    .maybeSingle();
+  if (error) { naringKlar = false; return console.error(error); }
+  naringKlar = data !== null;
+}
 async function loadPlantPhotos() {
   const { data, error } = await sb
     .from("plant_photos")
@@ -630,6 +643,7 @@ function renderAll() {
   renderPlantings();
   renderFeedings();
   renderFeedingReminder();
+  renderNaringKlarRad();
   fyllFeedingNotesList();
   // Registreringen är idempotent och rendering av raden kräver ett svar från
   // service worker-API:et, så den får hänga med utanför det synkrona flödet.
@@ -944,7 +958,7 @@ function populateSeasonFilter() {
 async function bytSasong(nyttAr) {
   season = nyttAr;
   localStorage.setItem(SASONG_NYCKEL, season);
-  await Promise.all([loadPlantings(), loadFeedings()]);
+  await Promise.all([loadPlantings(), loadFeedings(), loadFeedingDone()]);
   renderAll();
 }
 
@@ -1170,7 +1184,13 @@ function dagarSedan(isoDatum, idag = new Date()) {
 // Platser som behöver näring, mest försenad först. En plats utan plantor finns
 // inte med – den har ingenting att gödsla. dagar === null betyder att platsen
 // aldrig fått näring den här säsongen, vilket alltid räknas som försenat.
-function naringsLage(platser, rader, idag = new Date()) {
+//
+// klar === true tystar allt. Gödslingen upphör innan skörden gör det – man
+// slutar ge näring på slutet för att frukten ska mogna – och utan det här
+// kan påminnelsen inte skilja "du har glömt" från "jag är klar för i år".
+// Samma regel finns i naring_forsenade() i databasen, som styr push-notiserna.
+function naringsLage(platser, rader, idag = new Date(), klar = false) {
+  if (klar) return [];
   const lage = [];
   for (const plats of platser) {
     const senaste = rader.filter((f) => f.location === plats)[0];
@@ -1277,7 +1297,9 @@ function renderFeedingReminder() {
   const ruta = $("#feeding-reminder");
   // Bläddrar man tillbaka till ett gammalt odlingsår ska ingenting tjata –
   // de plantorna är sedan länge urdragna.
-  const lage = season === INNEVARANDE_AR ? naringsLage(placedLocations(), feedings) : [];
+  const lage = season === INNEVARANDE_AR
+    ? naringsLage(placedLocations(), feedings, new Date(), naringKlar)
+    : [];
   ruta.hidden = lage.length === 0;
   if (!lage.length) return;
 
@@ -1306,6 +1328,31 @@ function renderFeedingReminder() {
   // Knappen går till flerplatsdialogen även när bara en plats är försenad –
   // näring ges nästan alltid överallt samtidigt, och där syns alla platser.
   $("#reminder-log").onclick = () => openFeedAllDialog();
+  $("#reminder-klar").onclick = () => sattNaringKlar(true);
+}
+
+// Raden som visar att påminnelsen är avstängd. Den måste finnas: stänger man
+// av den enda ruta som nämner näringspåminnelsen finns det annars ingenstans
+// att ångra sig, och funktionen blir en enkelriktad dörr.
+function renderNaringKlarRad() {
+  const rad = $("#naring-klar-rad");
+  rad.hidden = !(naringKlar && season === INNEVARANDE_AR);
+  if (rad.hidden) return;
+  $("#naring-klar-text").textContent = `Påminnelser om näring är pausade för ${season}.`;
+  $("#naring-klar-angra").onclick = () => sattNaringKlar(false);
+}
+
+// Flaggan är säsongsscopad, så nästa år börjar påslaget av sig självt utan att
+// någon behöver komma ihåg att slå på den igen.
+async function sattNaringKlar(klar) {
+  if (season !== INNEVARANDE_AR) return;
+  const { error } = klar
+    ? await sb.from("feeding_done").upsert({ user_id: currentUser.id, season })
+    : await sb.from("feeding_done").delete().eq("user_id", currentUser.id).eq("season", season);
+  if (error) return console.error(error);
+  naringKlar = klar;
+  renderFeedingReminder();
+  renderNaringKlarRad();
 }
 
 // ---- Push-notiser

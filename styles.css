@@ -509,12 +509,35 @@ button:disabled {
 .reminder-place::after { content: " ·"; font-weight: 400; opacity: 0.55; }
 .reminder-days { opacity: 0.85; }
 .reminder-days.sent { font-weight: 600; opacity: 1; }
-/* Knappen får inte klämmas ihop till två tecken när platsnamnet är långt. */
-#reminder-log { flex: none; white-space: nowrap; }
+/* Knapparna får inte klämmas ihop till två tecken när platsnamnet är långt. */
+.reminder-knappar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+}
+.reminder-knappar button { flex: none; white-space: nowrap; }
+/* Ghost-knappen ärver inte rutans färg i det rosa läget, och grått mot rosa
+   blir för svagt för att läsas som en knapp. */
+.reminder.sent .reminder-knappar .ghost { color: var(--pink-ink); }
 @media (max-width: 520px) {
   .reminder { flex-direction: column; align-items: stretch; }
-  #reminder-log { width: 100%; }
+  .reminder-knappar { width: 100%; }
+  .reminder-knappar button { flex: 1; }
 }
+
+/* Samma form som push-raden – det är samma sorts upplysning: ett läge som är
+   på eller av, med vägen tillbaka bredvid. */
+.naring-klar-rad {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin: 0.9rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+.naring-klar-rad button { flex: none; }
 /* Kortet är flex-kolumn, så knappen skulle annars sträcka sig över hela bredden */
 .feeding-more {
   align-self: flex-start;

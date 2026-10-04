@@ -2,7 +2,8 @@
 -- Odlarnörden – databasschema
 --
 -- GENERERAD UR DEN LEVANDE DATABASEN 2026-08-15, påbyggd 2026-08-30 med
--- avsnittet PUSH-NOTISER (projekt rciaqovopajrkdtuhkdo).
+-- avsnittet PUSH-NOTISER och 2026-10-04 med KLAR MED NÄRING
+-- (projekt rciaqovopajrkdtuhkdo).
 -- Skriv inte om den här filen för hand när du ändrar databasen – då driver den
 -- isär igen. Gör ändringen i databasen och generera om filen därifrån.
 --
@@ -11,7 +12,7 @@
 -- `cron_naringsnotis` 2026-08-30). Den här filen är en läsbar kopia
 -- för repot – och en väg tillbaka om projektet någon gång försvinner.
 --
--- Läget 2026-08-30: 10 tabeller, 12 funktioner, 32 policies.
+-- Läget 2026-10-04: 11 tabeller, 12 funktioner, 33 policies.
 --
 -- Ordningen nedan spelar roll: funktionerna måste finnas före policyerna som
 -- anropar dem, och tomato_varieties före tabellerna som pekar på den.
@@ -520,6 +521,13 @@ as $function$
     where t.season = (select ar from sasong)
       and t.location is not null
       and t.location <> 'Ej placerad'
+      -- Tillagt 2026-10-04: den som sagt "klar med näring för i år" räknas
+      -- inte som försenad. Se avsnittet KLAR MED NÄRING längst ner.
+      and not exists (
+        select 1 from public.feeding_done k
+         where k.user_id = t.user_id
+           and k.season = (select ar from sasong)
+      )
   ),
   senaste as (
     select p.user_id, p.plats,
@@ -633,6 +641,54 @@ select cron.schedule(
   $job$
 );
 
+
+-- ============================================================================
+-- KLAR MED NÄRING (2026-10-04)
+--
+-- Gödslingen upphör innan skörden gör det – man slutar ge näring på slutet för
+-- att frukten ska mogna. Laras egen logg 2026 visar det tydligt: 32
+-- gödslingar i augusti, 7 i september, 0 i oktober, samtidigt som september
+-- blev den tyngsta skördemånaden (35,9 kg) och skörd fortfarande registrerades
+-- den 4 oktober.
+--
+-- Utan den här flaggan kan varken bannern eller push-notisen skilja "du har
+-- glömt" från "jag är klar för i år", och eftersom både naringsLage() och
+-- naring_forsenade() utgår från PLACERADE PLANTOR – som ligger kvar till nyår
+-- – tjatade påminnelsen hela hösten och tystnade sedan av en slump vid
+-- årsskiftet i stället för av design.
+--
+-- Flaggan är säsongsscopad: nästa säsong börjar påslagen utan att någon
+-- behöver komma ihåg att slå på den igen.
+-- ============================================================================
+
+create table public.feeding_done (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  season  text not null,
+  done_at timestamptz not null default now(),
+  primary key (user_id, season)
+);
+
+alter table public.feeding_done enable row level security;
+
+-- Rollen står utskriven, till skillnad från de äldre tabellerna – se skavank 2.
+create policy "egna rader" on public.feeding_done
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- naring_forsenade() byggdes om samma dag så att push-vägen stängs vid roten:
+-- den som är klar för säsongen räknas inte som försenad, oavsett hur länge det
+-- gått. Samma regel som naringsLage(klar) i app.js. Funktionen i det här
+-- dokumentet (under FUNKTIONER i avsnittet PUSH-NOTISER) är uppdaterad – det
+-- är villkoret `not exists` i CTE:n `platser`.
+--
+-- Regeln finns alltså på två ställen, med flit: bannern måste kunna avgöra
+-- läget utan att fråga servern, och notisen måste kunna det utan att appen är
+-- öppen. Ändras tröskeln eller villkoret ska BÅDA följas åt.
+--
+-- Verifierat 2026-10-04 med riktigt konto via /auth/v1/signup + REST:
+-- spara egen flagga 201, upsert igen 200 utan dubblett, se andras rader nej,
+-- sätta flaggan åt någon annan 403, ta bort egen 204.
 
 -- ============================================================================
 -- SKAVANKER SOM FINNS I DATABASEN IDAG

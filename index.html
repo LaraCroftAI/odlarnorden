@@ -106,7 +106,12 @@
       <p class="reminder-title" id="reminder-title"></p>
       <ul class="reminder-places" id="reminder-places"></ul>
     </div>
-    <button type="button" class="primary" id="reminder-log">Logga näring</button>
+    <span class="reminder-knappar">
+      <button type="button" class="primary" id="reminder-log">Logga näring</button>
+      <!-- Vägen ut ur påminnelsen, erbjuden i rutan som stör. Gömd längre ner
+           skulle den aldrig hittas av den som är trött på tjatet. -->
+      <button type="button" class="ghost" id="reminder-klar">Klar för i år</button>
+    </span>
   </aside>
 
   <!-- Erbjudandet om telefonnotiser. Ligger här uppe för att den permanenta
@@ -175,6 +180,12 @@
     </div>
     <ul id="feeding-list" class="cards"></ul>
     <p id="feeding-empty" class="msg" hidden>Här dyker dina platser upp när du har plantor placerade (allt utom "Ej placerad").</p>
+
+    <!-- Syns bara när påminnelsen är pausad. Sätts av renderNaringKlarRad(). -->
+    <p id="naring-klar-rad" class="naring-klar-rad" hidden>
+      <span id="naring-klar-text"></span>
+      <button type="button" class="ghost" id="naring-klar-angra">Slå på igen</button>
+    </p>
 
     <!-- Push-notiser. Texten och knappen sätts av renderPushRad(); raden är
          alltid synlig så att den som inte kan få notiser får veta varför. -->

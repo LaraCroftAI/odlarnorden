@@ -93,6 +93,24 @@ check("aldrig gödslat läggs överst",
     { plats: "Friland", dagar: 10, sent: false },
   ]);
 
+console.log("\n--- Klar med näring för i år ---");
+// Gödslingen upphör innan skörden gör det. Utan den här flaggan tjatar
+// påminnelsen hela hösten på plantor som bara ska mogna färdigt – och
+// push-notisen kommer var tredje dygn ända till nyår.
+const forsenatOverallt = [rad("Friland", "2026-08-10"), rad("Växthus", "2026-08-10")];
+check("försenat men klar för året → tyst",
+  M.naringsLage(["Friland", "Växthus"], forsenatOverallt, IDAG, true), []);
+check("aldrig gödslat men klar för året → tyst",
+  M.naringsLage(["Kruka"], [], IDAG, true), []);
+// Flaggan får inte bli en permanent avstängning: utelämnad ska den vara av,
+// så att en ny säsong börjar påslagen utan att någon gör något.
+check("utelämnad flagga påminner som förut",
+  M.naringsLage(["Växthus"], [rad("Växthus", "2026-08-10")], IDAG),
+  [{ plats: "Växthus", dagar: 20, sent: true }]);
+check("uttryckligen false påminner som förut",
+  M.naringsLage(["Växthus"], [rad("Växthus", "2026-08-10")], IDAG, false),
+  [{ plats: "Växthus", dagar: 20, sent: true }]);
+
 console.log("\n--- Bara senaste raden per plats styr ---");
 check("gammal rad drar inte upp en nyss gödslad plats",
   M.naringsLage(["Växthus"],
