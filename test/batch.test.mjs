@@ -219,6 +219,17 @@ check("x2 Atamon-raden orörd", c2.endsWith("Atamon enligt förpackningen"), tru
 // Recepten börjar direkt med rubriken – ingen inledning före listan.
 check("x2 rubriken på första raden räcker", c2.startsWith("Ingredienser\n2400 g"), true);
 
+group("Fikonmarmelad med vanilj");
+// I Word stod citronen inom parentes, "(cirka 2/3 av en citron)", och
+// parenteser skalas inte – vid dubbel sats hade det stått kvar ⅔ citron.
+const fikon = `Ingredienser
+1 000 g fikon, hackade
+1 vaniljstång
+Saft från cirka ⅔ citron, blandad med fikonen
+Atamon enligt förpackningen`;
+check("x2 tredjedelar blir blandat tal", scaleRecipeBody(fikon, 2).includes("cirka 1 ⅓ citron"), true);
+check("½ tredjedelar", scaleRecipeBody(fikon, 0.5).includes("cirka ⅓ citron"), true);
+
 // ------------------------------------------------------------------ utbyte
 // Dubblar man ketchupen blir det dubbelt så mycket ketchup – men den kokar
 // inte dubbelt så länge. Utbytesraden ska alltså skala, koktidsraden inte.
