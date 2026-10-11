@@ -195,8 +195,8 @@ check("½ socker", gHalv.includes("75 g strösocker"), true);
 check("½ te blir bråk", gHalv.includes("½ tsk lösviktste"), true);
 
 group("Chutneyerna (inlagda 2026-10-11)");
-// Utdrag ur Mild tomatchutney på körsbärstomater och Tomatchutney med vitlök och
-// cayenne – de mönster de fem första recepten inte hade.
+// Utdrag ur Mild tomatchutney på körsbärstomater och Tomatchutney med färsk
+// chili – de mönster de fem första recepten inte hade.
 const chutney = `Ingredienser
 1 200 g körsbärstomater
 2 rödlökar, ca 90–125 g styck
