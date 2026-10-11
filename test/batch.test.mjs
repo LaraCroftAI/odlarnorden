@@ -206,9 +206,7 @@ Ingredienser
 1¾ tsk salt
 knappt ½ tsk malen kanel
 1–1½ Cayenne Long Slim, urkärnad
-
-Korrigeringar och erfarenheter
-Sockret är korrigerat från första versionens 105 g farin + 70 g syltsocker.`;
+Atamon enligt förpackningen`;
 const c2 = scaleRecipeBody(chutney, 2);
 check("x2 tusental", c2.includes("2400 g körsbärstomater"), true);
 // Vikten per lök är ett förhållande. Stod det "180–250 g tillsammans" skulle
@@ -218,7 +216,8 @@ check("x2 procent utan parentes orörd", c2.includes("40 ml ättiksprit 12 %"), 
 check("x2 bråk utan mellanslag", c2.includes("3 ½ tsk salt"), true);
 check("x2 bråk efter ord", c2.includes("knappt 1 tsk malen kanel"), true);
 check("x2 intervall med bråk", c2.includes("2–3 Cayenne Long Slim"), true);
-check("x2 tidigare versioner orörda", c2.includes("105 g farin + 70 g syltsocker"), true);
+// Atamon doseras efter förpackningen och har ingen mängd som kan skalas.
+check("x2 Atamon-raden orörd", c2.endsWith("Atamon enligt förpackningen"), true);
 check("x2 underrubriken orörd", c2.startsWith("Slutlig version med ingrediensbyten."), true);
 
 // ------------------------------------------------------------------ utbyte
