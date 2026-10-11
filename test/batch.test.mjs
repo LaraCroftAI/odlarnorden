@@ -197,7 +197,7 @@ check("½ te blir bråk", gHalv.includes("½ tsk lösviktste"), true);
 group("Chutneyerna (inlagda 2026-10-11)");
 // Utdrag ur Mild tomatchutney på körsbärstomater och Tomatchutney med vitlök och
 // cayenne – de mönster de fem första recepten inte hade.
-const chutney = `Slutlig version med ingrediensbyten.
+const chutney = `Mindre söt version, faktiskt provad.
 
 Ingredienser
 1 200 g körsbärstomater
@@ -218,7 +218,7 @@ check("x2 bråk efter ord", c2.includes("knappt 1 tsk malen kanel"), true);
 check("x2 intervall med bråk", c2.includes("2–3 Cayenne Long Slim"), true);
 // Atamon doseras efter förpackningen och har ingen mängd som kan skalas.
 check("x2 Atamon-raden orörd", c2.endsWith("Atamon enligt förpackningen"), true);
-check("x2 underrubriken orörd", c2.startsWith("Slutlig version med ingrediensbyten."), true);
+check("x2 underrubriken orörd", c2.startsWith("Mindre söt version, faktiskt provad."), true);
 
 // ------------------------------------------------------------------ utbyte
 // Dubblar man ketchupen blir det dubbelt så mycket ketchup – men den kokar
