@@ -194,6 +194,33 @@ check("½ melatin", gHalv.includes("4 g Gul Melatin"), true);
 check("½ socker", gHalv.includes("75 g strösocker"), true);
 check("½ te blir bråk", gHalv.includes("½ tsk lösviktste"), true);
 
+group("Chutneyerna (inlagda 2026-10-11)");
+// Utdrag ur Körsbärstomatchutney med rödlök och Tomatchutney med vitlök och
+// cayenne – de mönster de fem första recepten inte hade.
+const chutney = `Slutlig version med ingrediensbyten.
+
+Ingredienser
+1 200 g körsbärstomater
+2 rödlökar, ca 90–125 g styck
+20 ml ättiksprit 12 %
+1¾ tsk salt
+knappt ½ tsk malen kanel
+1–1½ Cayenne Long Slim, urkärnad
+
+Korrigeringar och erfarenheter
+Sockret är korrigerat från första versionens 105 g farin + 70 g syltsocker.`;
+const c2 = scaleRecipeBody(chutney, 2);
+check("x2 tusental", c2.includes("2400 g körsbärstomater"), true);
+// Vikten per lök är ett förhållande. Stod det "180–250 g tillsammans" skulle
+// fyra lökar få samma vikt som två – raden skrevs om av det skälet.
+check("x2 lökvikten per styck orörd", c2.includes("4 rödlökar, ca 90–125 g styck"), true);
+check("x2 procent utan parentes orörd", c2.includes("40 ml ättiksprit 12 %"), true);
+check("x2 bråk utan mellanslag", c2.includes("3 ½ tsk salt"), true);
+check("x2 bråk efter ord", c2.includes("knappt 1 tsk malen kanel"), true);
+check("x2 intervall med bråk", c2.includes("2–3 Cayenne Long Slim"), true);
+check("x2 tidigare versioner orörda", c2.includes("105 g farin + 70 g syltsocker"), true);
+check("x2 underrubriken orörd", c2.startsWith("Slutlig version med ingrediensbyten."), true);
+
 // ------------------------------------------------------------------ utbyte
 // Dubblar man ketchupen blir det dubbelt så mycket ketchup – men den kokar
 // inte dubbelt så länge. Utbytesraden ska alltså skala, koktidsraden inte.
